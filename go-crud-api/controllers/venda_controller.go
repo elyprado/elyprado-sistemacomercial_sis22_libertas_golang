@@ -28,7 +28,7 @@ func GetVendas(w http.ResponseWriter, r *http.Request) {
 	var vendas []models.Venda
 	for rows.Next() {
 		var venda models.Venda
-		if err := rows.Scan(&venda.ID, &venda.NumeroNF &venda.Data, &venda.Quantidade, &venda.Valor, &venda.Comissao, &venda.IdCliente, &venda.IdProduto, &venda.IdVendedor, &venda.IdVendedor); err != nil {
+		if err := rows.Scan(&venda.ID, &venda.NumeroNF, &venda.Data, &venda.Quantidade, &venda.Valor, &venda.Comissao, &venda.IdCliente, &venda.IdProduto, &venda.IdVendedor, &venda.IdVendedor); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -55,7 +55,7 @@ func GetVenda(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	var venda models.Venda
-	err = db.QueryRow("SELECT numeronf, data, quantidade, valor, comissao, idcliente, idproduto, idvendedor FROM venda WHERE idvenda = ?", id).Scan(&venda.ID, &venda.NumeroNF &venda.Data, &venda.Quantidade, &venda.Valor, &venda.Comissao, &venda.IdCliente, &venda.IdProduto, &venda.IdVendedor, &venda.IdVendedor)
+	err = db.QueryRow("SELECT numeronf, data, quantidade, valor, comissao, idcliente, idproduto, idvendedor FROM venda WHERE idvenda = ?", id).Scan(&venda.ID, &venda.NumeroNF, &venda.Data, &venda.Quantidade, &venda.Valor, &venda.Comissao, &venda.IdCliente, &venda.IdProduto, &venda.IdVendedor, &venda.IdVendedor)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Venda not found", http.StatusNotFound)
 		return
@@ -68,7 +68,7 @@ func GetVenda(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(venda)
 }
 
-//➕Método de inserção de usuário
+// ➕Método de inserção de usuário
 func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	var venda models.Venda
 	if err := json.NewDecoder(r.Body).Decode(&venda); err != nil {
@@ -83,7 +83,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO venda (numeronf, data, quantidade, valor, comissao, idcliente, idproduto, idvendedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", venda.NumeroNF venda.Data, venda.Quantidade, venda.Valor, venda.Comissao, venda.IdCliente, venda.IdProduto, venda.IdVendedor, venda.IdVendedor)
+	result, err := db.Exec("INSERT INTO venda (numeronf, data, quantidade, valor, comissao, idcliente, idproduto, idvendedor) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", venda.NumeroNF, venda.Data, venda.Quantidade, venda.Valor, venda.Comissao, venda.IdCliente, venda.IdProduto, venda.IdVendedor, venda.IdVendedor)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -100,7 +100,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(venda)
 }
 
-//⬆️ Método atualizar venda
+// ⬆️ Método atualizar venda
 func UpdateVenda(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
@@ -122,7 +122,7 @@ func UpdateVenda(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE venda SET numeronf = ?, data = ?, quantidade = ?, valor = ?, comissao = ?, idcliente = ?, idproduto = ?, idvendedor = ? WHERE idvenda = ?", venda.NumeroNF venda.Data, venda.Quantidade, venda.Valor, venda.Comissao, venda.IdCliente, venda.IdProduto, venda.IdVendedor, venda.IdVendedor, id)
+	_, err = db.Exec("UPDATE venda SET numeronf = ?, data = ?, quantidade = ?, valor = ?, comissao = ?, idcliente = ?, idproduto = ?, idvendedor = ? WHERE idvenda = ?", venda.NumeroNF, venda.Data, venda.Quantidade, venda.Valor, venda.Comissao, venda.IdCliente, venda.IdProduto, venda.IdVendedor, venda.IdVendedor, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -133,7 +133,7 @@ func UpdateVenda(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(venda)
 }
 
-//🗑️ Método excluir venda
+// 🗑️ Método excluir venda
 func DeleteVenda(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
