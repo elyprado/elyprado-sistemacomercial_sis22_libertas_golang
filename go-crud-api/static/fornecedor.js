@@ -67,17 +67,30 @@ function listar() {
 
     // fetch("http://127.0.0.1:8080/fornecedor?pesquisa=" + txtPesquisa.value)
     fetch(url)
-    .then(resp => resp.json())
-    .then(dados => {
-        console.log(dados)
-        if (dados == "" || dados == null) {
+    .then(resp => {
+        // resp.json()
+        if (resp.status == 200) {
+            resp.json()
+            .then(dados => {
+                // console.log(dados)
+                if (dados == "" || dados == null) {
+                    const lista = document.getElementById("lista");
+                    //limpa a lista
+                    lista.innerHTML = "";
+                    lista.innerHTML = "<tr><td colspan='9'>Nenhum registro encontrado</td></tr>";
+                } else {
+                    mostrar(dados, txtPesquisa.value);
+                };
+            });
+        } else {
             const lista = document.getElementById("lista");
             //limpa a lista
             lista.innerHTML = "";
             lista.innerHTML = "<tr><td colspan='9'>Nenhum registro encontrado</td></tr>";
-        } else {
-            mostrar(dados, txtPesquisa.value);
         };
+    })
+    .catch(err => {
+        console.log("ERRO Catch: ", err)
     });
 };
 

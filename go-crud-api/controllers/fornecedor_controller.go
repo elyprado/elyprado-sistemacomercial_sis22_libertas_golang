@@ -80,7 +80,7 @@ func CreateFornecedor(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO fornecedor (nome, cnpj, logradouro, numero, bairro, cep, telefone, idcidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", fornecedor.Nome, fornecedor.Cnpj, fornecedor.Logradouro, fornecedor.Numero, fornecedor.Bairro, fornecedor.Cep, fornecedor.Telefone)
+	result, err := db.Exec("INSERT INTO fornecedor (nome, cnpj, logradouro, numero, bairro, cep, telefone, idcidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", fornecedor.Nome, fornecedor.Cnpj, fornecedor.Logradouro, fornecedor.Numero, fornecedor.Bairro, fornecedor.Cep, fornecedor.Telefone, fornecedor.IDCidade)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,7 +118,7 @@ func UpdateFornecedor(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE fornecedor SET nome = ?,  WHERE idfornecedor = ?", fornecedor.Nome, fornecedor.Cnpj, fornecedor.Logradouro, fornecedor.Numero, fornecedor.Bairro, fornecedor.Cep, fornecedor.Telefone, id)
+	_, err = db.Exec("UPDATE fornecedor SET nome = ?, cnpj = ?, logradouro = ?, numero = ?, bairro = ?, cep = ?, telefone = ?, idcidade = ? WHERE idfornecedor = ?", fornecedor.Nome, fornecedor.Cnpj, fornecedor.Logradouro, fornecedor.Numero, fornecedor.Bairro, fornecedor.Cep, fornecedor.Telefone, fornecedor.IDCidade, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
