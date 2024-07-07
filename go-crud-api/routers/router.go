@@ -36,6 +36,12 @@ func SetupRouter() *mux.Router {
 	router.HandleFunc("/vendedor/{id}", controllers.UpdateVendedor).Methods("PUT")
 	router.HandleFunc("/vendedor/{id}", controllers.DeleteVendedor).Methods("DELETE")
 
+	router.HandleFunc("/caixa", controllers.GetCaixas).Methods("GET")
+	router.HandleFunc("/caixa/{id}", controllers.GetCaixa).Methods("GET")
+	router.HandleFunc("/caixa", controllers.CreateCaixa).Methods("POST")
+	router.HandleFunc("/caixa/{id}", controllers.UpdateCaixa).Methods("PUT")
+	router.HandleFunc("/caixa/{id}", controllers.DeleteCaixa).Methods("DELETE")
+
 	router.HandleFunc("/conta", controllers.GetConta).Methods("GET")
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
