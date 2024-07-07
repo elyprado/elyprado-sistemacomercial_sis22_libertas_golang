@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -12,37 +11,39 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetProdutos(w http.ResponseWriter, r *http.Request) {
+func GetCidades(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idproduto, descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca FROM produto")
+
+	rows, err := db.Query("SELECT * FROM cidade")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var produtos []models.Produto
+
+	var cidades []models.Cidade
 	for rows.Next() {
-		var produto models.Produto
-		if err := rows.Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca); err != nil {
+		var cidade models.Cidade
+		if err := rows.Scan(&cidade.ID, &cidade.NomeCidade, &cidade.Uf, &cidade.CodigoIbge, &cidade.População, &cidade.Latitude, &cidade.Longitude); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		produtos = append(produtos, produto)
+		cidades = append(cidades, cidade)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produtos)
+	json.NewEncoder(w).Encode(cidades)
 }
 
-func GetProduto(w http.ResponseWriter, r *http.Request) {
+func GetCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
@@ -53,10 +54,10 @@ func GetProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var produto models.Produto
-	err = db.QueryRow("SELECT idproduto, descricao, precocusto,precovenda,saldoestoque,codbarras,idmarca FROM produto WHERE idproduto = ?", id).Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca)
+	var cidade models.Cidade
+	err = db.QueryRow("SELECT * FROM cidade WHERE idcidade = ?", id).Scan(&cidade.ID, &cidade.NomeCidade, &cidade.Uf, &cidade.CodigoIbge, &cidade.População, &cidade.Latitude, &cidade.Longitude)
 	if err == sql.ErrNoRows {
-		http.Error(w, "produto not found", http.StatusNotFound)
+		http.Error(w, "Cidade not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,12 +65,12 @@ func GetProduto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func CreateProduto(w http.ResponseWriter, r *http.Request) {
-	var produto models.Produto
-	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
+func CreateCidade(w http.ResponseWriter, r *http.Request) {
+	var cidade models.Cidade
+	if err := json.NewDecoder(r.Body).Decode(&cidade); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -81,7 +82,8 @@ func CreateProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO produto (descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca) VALUES (?, ?, ?, ?, ?, ?)", produto.ID, produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca)
+	result, err := db.Exec("INSERT INTO cidade (nomecidade, uf, codigo_ibge, população, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
+		cidade.NomeCidade, cidade.Uf, cidade.CodigoIbge, cidade.População, cidade.Latitude, cidade.Longitude)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,22 +94,22 @@ func CreateProduto(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	produto.ID = int(id)
+	cidade.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func UpdateProduto(w http.ResponseWriter, r *http.Request) {
+func UpdateCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
-	var produto models.Produto  
-	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
+	var cidade models.Cidade
+	if err := json.NewDecoder(r.Body).Decode(&cidade); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -119,22 +121,23 @@ func UpdateProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE produto SET descricao = ?, precocusto = ?, precovenda = ?, saldoestoque =?, codbarras = ?, idmarca = ?  WHERE idproduto = ?", produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca, id)
+	_, err = db.Exec("UPDATE cidade SET nomecidade = ?, uf = ?, codigo_ibge = ?, população = ?, latitude = ?, longitude = ? WHERE idcidade = ?",
+		cidade.NomeCidade, cidade.Uf, cidade.CodigoIbge, cidade.População, cidade.Latitude, cidade.Longitude, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	produto.ID = id
+	cidade.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func DeleteProduto(w http.ResponseWriter, r *http.Request) {
+func DeleteCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
@@ -145,7 +148,7 @@ func DeleteProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM produto WHERE idproduto = ?", id)
+	_, err = db.Exec("DELETE FROM cidade WHERE idcidade = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

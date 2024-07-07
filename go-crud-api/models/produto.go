@@ -6,7 +6,7 @@ type Produto struct {
 	PrecoCusto    float64 `json:"precocusto"`
 	PrecoVenda    float64 `json:"precovenda"`
 	SaldoEstoque float64 `json:"saldoestoque"`
-	CodBarras int `json:"codbarras"`
+	CodBarras string `json:"codbarras"`
 	IdMarca int `json:"idmarca"`
 	
 }

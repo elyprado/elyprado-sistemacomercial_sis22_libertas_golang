@@ -8,16 +8,21 @@ const modalExcluir = new bootstrap.Modal(
 
 function novo() {
     idatual = -1;
-    const txtdata= document.getElementById("txtdata");
-    const nmbvalor = document.getElementById("txtvalor");
+    const nmbN = document.getElementById("nmbN")
+    const txtdata = document.getElementById("txtdata");
+    const txtvalor = document.getElementById("txtvalor");
     const txtvenc = document.getElementById("txtvenc");
     const txtpag = document.getElementById("txtpag");
+    const txtvpag = document.getElementById("txtvpag");
+    const opc = document.getElementById("opcFornecedo")
 
     //limpa os campo
+    nmbN.value = 0;
     txtdata.value = "";
-    nmbvalor.value = "";
+    txtvalor.value = "";
     txtvenc.value = "";
     txtpag.value = "";
+    txtvpag.value = "";
 
     //abre a dialog
     modal.show();
@@ -25,18 +30,18 @@ function novo() {
 function alterar(id) {
     idatual = id;
     //carregar os dados do id passado por parametro
-    fetch("http://127.0.0.1:3333/contasapagar/" + id)
+    fetch("http://127.0.0.1:8080/conta/" + id)
     .then(resp => resp.json())
     .then(dados => {
-        console.log('Dados retornados do servidor:', dados)
+        console.log('Dados retornados do servidor:', dados, )
         //preenche os inputs
         const nmbN = document.getElementById("nmbN")
         const txtdata = document.getElementById("txtdata");
         const txtvalor = document.getElementById("txtvalor");
         const txtvenc = document.getElementById("txtvenc");
         const txtpag = document.getElementById("txtpag");
-        const data = formatar_data(dados.data)
-        const venc = formatar_data(dados.vencimento)
+        const data = formatar_data(dados.data);
+        const venc = formatar_data(dados.vencimento);
         nmbN.value = dados.idpagar;
         txtdata.value = data;
         txtvalor.value = dados.valor;
@@ -54,7 +59,7 @@ function listar() {
     const txtpesquisa = document.getElementById("txtpesquisa");
 
 
-    fetch("http://127.0.0.1:3333/contasapagar?pesquisa=" + txtpesquisa.value)
+    fetch("http://127.0.0.1:8080/conta?pesquisa=" + txtpesquisa.value)
     .then(resp => resp.json())
     .then(dados => mostrar(dados));
 }
@@ -99,7 +104,7 @@ function excluir(id) {
     modalExcluir.show();
 }
 function excluirSim() {
-    fetch("http://127.0.0.1:3333/contasapagar/" + idatual,
+    fetch("http://127.0.0.1:8080/conta/" + idatual,
         {
             headers: {
                 'Accept': 'application/json',
@@ -123,10 +128,10 @@ function salvar() {
     const txtpag = document.getElementById("txtpag");
     const txtvpag = document.getElementById("txtvpag");
     const opc = document.getElementById("opcFornecedor")
-    
+    const nmbid = parseInt(nmbN, 10)
 
     const dados = {
-        "idpagar":nmbN.value,
+        "idpagar":nmbid,
         "data": txtdata.value,
         "valor": txtvalor.value,
         "vencimento": txtvenc.value,
@@ -134,16 +139,15 @@ function salvar() {
         "valorpago":  txtvpag.value,
         "idfornecedor": opc.value
     }
-
     var url;
     var metodo;
     if (idatual<=0) {
         //inserir
-        url = "http://127.0.0.1:3333/contasapagar/";
+        url = "http://127.0.0.1:8080/conta";
         metodo = "POST";
     } else {
         //alterar
-        url = "http://127.0.0.1:3333/contasapagar/" + idatual;
+        url = "http://127.0.0.1:8080/conta/" + idatual;
         metodo = "PUT";
     }
     fetch(url,

@@ -30,7 +30,7 @@ function novo() {
 function alterar(id) {
     idatual = id;
     //carregar os dados do id passado por parametro
-    fetch("http://127.0.0.1:3333/cidade/" + id)
+    fetch("http://127.0.0.1:8080/cidade/" + id)
     .then(resp => resp.json())
     .then(dados => {
         //preenche os inputs
@@ -61,7 +61,7 @@ function listar() {
     const txtpesquisa = document.getElementById("txtpesquisa");
 
 
-    fetch("http://127.0.0.1:3333/cidade?pesquisa=" + txtpesquisa.value)
+    fetch("http://127.0.0.1:8080/cidade?pesquisa=" + txtpesquisa.value)
     .then(resp => resp.json())
     .then(dados => mostrar(dados));
 }
@@ -94,7 +94,7 @@ function excluir(id) {
     modalExcluir.show();
 }
 function excluirSim() {
-    fetch("http://127.0.0.1:3333/cidade/" + idatual,
+    fetch("http://127.0.0.1:8080/cidade/" + idatual,
         {
             headers: {
                 'Accept': 'application/json',
@@ -121,21 +121,21 @@ function salvar() {
     const dados = {
         nomecidade: txtnomecidade.value,
         uf: txtuf.value,
-        codigo_ibge: txtcodigo_ibge.value, 
-        população: txtpopulação.value,
-        latitude: txtlatitude.value, 
-        longitude: txtlongitude.value
+        codigo_ibge: txtcodigo_ibge.value,// Converter para inteiro
+        população: parseInt(txtpopulação.value, 10), // Converter para inteiro
+        latitude: parseFloat(txtlatitude.value), // Converter para float
+        longitude: parseFloat(txtlongitude.value) // Converter para float
     }
 
     var url;
     var metodo;
     if (idatual<=0) {
         //inserir
-        url = "http://127.0.0.1:3333/cidade";
+        url = "http://127.0.0.1:8080/cidade";
         metodo = "POST";
     } else {
         //alterar
-        url = "http://127.0.0.1:3333/cidade/" + idatual;
+        url = "http://127.0.0.1:8080/cidade/" + idatual;
         metodo = "PUT";
     }
     fetch(url,

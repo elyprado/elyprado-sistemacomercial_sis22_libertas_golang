@@ -1,4 +1,3 @@
-
 package controllers
 
 import (
@@ -12,37 +11,42 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetProdutos(w http.ResponseWriter, r *http.Request) {
+// GET
+func GetCompra(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idproduto, descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca FROM produto")
+
+	rows, err := db.Query("SELECT idcompra, numeronf, data, quantidade, valor, idproduto, idfornecedor FROM compra")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var produtos []models.Produto
+
+	var compras []models.Compra
 	for rows.Next() {
-		var produto models.Produto
-		if err := rows.Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca); err != nil {
+		var compra models.Compra
+		if err := rows.Scan(&compra.ID, &compra.NumeroNF, &compra.Data, &compra.Quantidade, &compra.Valor, &compra.IdProduto, &compra.IdFornecedor); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		produtos = append(produtos, produto)
+		compras = append(compras, compra)
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produtos)
+	json.NewEncoder(w).Encode(compras)
 }
 
-func GetProduto(w http.ResponseWriter, r *http.Request) {
+// GET ID
+func GetCompraByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid compra ID", http.StatusBadRequest)
 		return
 	}
 
@@ -53,10 +57,10 @@ func GetProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var produto models.Produto
-	err = db.QueryRow("SELECT idproduto, descricao, precocusto,precovenda,saldoestoque,codbarras,idmarca FROM produto WHERE idproduto = ?", id).Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca)
+	var compra models.Compra
+	err = db.QueryRow("SELECT idcompra, numeronf, data, quantidade, valor, idproduto, idfornecedor FROM compra WHERE idcompra = ?", id).Scan(&compra.ID, &compra.NumeroNF, &compra.Data, &compra.Quantidade, &compra.Valor, &compra.IdProduto, &compra.IdFornecedor)
 	if err == sql.ErrNoRows {
-		http.Error(w, "produto not found", http.StatusNotFound)
+		http.Error(w, "compra not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,12 +68,13 @@ func GetProduto(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func CreateProduto(w http.ResponseWriter, r *http.Request) {
-	var produto models.Produto
-	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
+// POST
+func CreateCompra(w http.ResponseWriter, r *http.Request) {
+	var compra models.Compra
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -81,7 +86,7 @@ func CreateProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO produto (descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca) VALUES (?, ?, ?, ?, ?, ?)", produto.ID, produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca)
+	result, err := db.Exec("INSERT INTO compra (numeronf, data, quantidade, valor, idproduto, idfornecedor) VALUES (?, ?, ?, ?, ?, ?)", compra.NumeroNF, compra.Data, compra.Quantidade, compra.Valor, compra.IdProduto, compra.IdFornecedor)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -92,22 +97,23 @@ func CreateProduto(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	produto.ID = int(id)
+	compra.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func UpdateProduto(w http.ResponseWriter, r *http.Request) {
+// PUT
+func UpdateCompra(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid compra ID", http.StatusBadRequest)
 		return
 	}
 
-	var produto models.Produto  
-	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
+	var compra models.Compra
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -119,22 +125,23 @@ func UpdateProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE produto SET descricao = ?, precocusto = ?, precovenda = ?, saldoestoque =?, codbarras = ?, idmarca = ?  WHERE idproduto = ?", produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca, id)
+	_, err = db.Exec("UPDATE compra SET numeronf = ?, data = ?, quantidade = ?, valor = ?, idproduto = ?, idfornecedor = ? WHERE idcompra = ?", compra.NumeroNF, compra.Data, compra.Quantidade, compra.Valor, compra.IdProduto, compra.IdFornecedor, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	produto.ID = id
+	compra.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(produto)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func DeleteProduto(w http.ResponseWriter, r *http.Request) {
+// DELETE
+func DeleteCompra(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
+		http.Error(w, "Invalid Compra ID", http.StatusBadRequest)
 		return
 	}
 
@@ -145,7 +152,7 @@ func DeleteProduto(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM produto WHERE idproduto = ?", id)
+	_, err = db.Exec("DELETE FROM compra WHERE idcompra = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -15,7 +15,7 @@ function novo() {
     const txtbairro = document.getElementById("txtbairro");
     const txtcep = document.getElementById("txtcep");
     const txttelefone = document.getElementById("txttelefone");
-
+    const idcidade = document.getElementById("idcidade");
 
     //limpa os campo
     txtnome.value = "";
@@ -25,14 +25,14 @@ function novo() {
     txtbairro.value = "";
     txtcep.value = "";
     txttelefone.value = "";
-
+    idcidade.value = "";
     //abre a dialog
     modal.show();
 }
 function alterar(id) {
     idatual = id;
 
-    fetch("http://127.0.0.1:3333/cliente/" + id)
+    fetch("http://127.0.0.1:8080/cliente/" + id)
         .then(resp => resp.json())
         .then(dados => {
 
@@ -44,7 +44,7 @@ function alterar(id) {
             const txtbairro = document.getElementById("txtbairro");
             const txtcep = document.getElementById("txtcep");
             const txttelefone = document.getElementById("txttelefone");
-
+            const idcidade = document.getElementById("idcidade");
 
             txtnome.value = dados.nome;
             txtcpf.value = dados.cpf;
@@ -53,6 +53,7 @@ function alterar(id) {
             txtbairro.value = dados.bairro;
             txtcep.value = dados.cep;
             txttelefone.value = dados.telefone;
+            idcidade.value = dados.idcidade;
 
             modal.show();
         });
@@ -64,7 +65,7 @@ function listar() {
     const txtpesquisa = document.getElementById("txtpesquisa");
 
 
-    fetch("http://127.0.0.1:3333/cliente?pesquisa=" + txtpesquisa.value)
+    fetch("http://127.0.0.1:8080/cliente/" + txtpesquisa.value)
         .then(resp => resp.json())
         .then(dados => mostrar(dados));
 }
@@ -83,6 +84,7 @@ function mostrar(dados) {
             + "<td>" + dados[i].bairro + "</td>"
             + "<td>" + dados[i].cep + "</td>"
             + "<td>" + dados[i].telefone + "</td>"
+            + "<td>" + dados[i].idcidade + "</td>"
 
             + "<td style='display:flex'>"
             + "<button type='button' class='btn btn-primary' "
@@ -98,7 +100,7 @@ function excluir(id) {
     modalExcluir.show();
 }
 function excluirSim() {
-    fetch("http://127.0.0.1:3333/cliente/" + idatual,
+    fetch("http://127.0.0.1:8080/cliente/" + idatual,
         {
             headers: {
                 'Accept': 'application/json',
@@ -121,6 +123,7 @@ async function salvar() {
     const txtbairro = document.getElementById("txtbairro");
     const txtcep = document.getElementById("txtcep");
     const txttelefone = document.getElementById("txttelefone");
+    const idcidade = document.getElementById("idcidade");
     const lista = document.getElementById("lista");
     lista.innerHTML = "<tr><td colspan=5>Carregando...</td></tr>";
 
@@ -134,16 +137,16 @@ async function salvar() {
         bairro: txtbairro.value,
         cep: txtcep.value,
         telefone: txttelefone.value,
-
+        idcidade: parseInt(idcidade.value)
     }
 
     var url;
     var metodo;
     if (idatual <= 0) {
-        url = "http://127.0.0.1:3333/cliente";
+        url = "http://127.0.0.1:8080/cliente";
         metodo = "POST";
     } else {
-        url = "http://127.0.0.1:3333/cliente/" + idatual;
+        url = "http://127.0.0.1:8080/cliente/" + idatual;
         metodo = "PUT";
     }
     fetch(url,

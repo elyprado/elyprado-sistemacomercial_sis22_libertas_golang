@@ -10,5 +10,5 @@ type Vendedor struct {
 	CEP           string `json:"cep"`
 	Telefone      string `json:"telefone"`
 	Perc_comissao string `json:"perc_comissao"`
-	IdCidade      int    `json:"idcidade"`
+	IdCidade      string `json:"idcidade"`
 }

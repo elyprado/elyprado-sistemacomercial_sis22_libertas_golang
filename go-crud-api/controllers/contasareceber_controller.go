@@ -11,35 +11,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetContas(w http.ResponseWriter, r *http.Request) {
+func GetContasReceber(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	//
 	defer db.Close()
-	rows, err := db.Query("SELECT idpagar, data, valor,vencimento,pagamento,valorpago,idfornecedor FROM conta_pagar")
+	rows, err := db.Query("SELECT idreceber, data, valor, vencimento, pagamento, valorpago, idcliente FROM conta_receber ORDER BY data")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var contas []models.Conta
+	var contasareceber []models.ContaReceber
 	for rows.Next() {
-		// A variável conta_pagar armazena os dados da tabela do arquivo contasapagar, do pacote models
-		var conta_pagar models.Conta
-		if err := rows.Scan(&conta_pagar.ID_Pagar, &conta_pagar.Data, &conta_pagar.Valor, &conta_pagar.Vencimento, &conta_pagar.Pagamento, &conta_pagar.Valorpago, &conta_pagar.Idfornecedor); err != nil {
+		var contareceber models.ContaReceber
+		if err := rows.Scan(&contareceber.ID, &contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		contas = append(contas, conta_pagar)
+		contasareceber = append(contasareceber, contareceber)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contas)
+	json.NewEncoder(w).Encode(contasareceber)
 }
 
-func GetConta(w http.ResponseWriter, r *http.Request) {
+func GetContaReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -54,8 +52,8 @@ func GetConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var conta models.Conta
-	err = db.QueryRow("SELECT * FROM conta_pagar WHERE idpagar = ?", id).Scan(&conta.ID_Pagar, &conta.Data, &conta.Valor, &conta.Vencimento, &conta.Pagamento, &conta.Valorpago, &conta.Idfornecedor)
+	var contareceber models.ContaReceber
+	err = db.QueryRow("SELECT idreceber, data, valor, vencimento, pagamento, valorpago, idcliente FROM conta_receber WHERE idreceber = ?", id).Scan(&contareceber.ID, &contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente)
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -65,12 +63,12 @@ func GetConta(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func CreateConta(w http.ResponseWriter, r *http.Request) {
-	var conta models.Conta
-	if err := json.NewDecoder(r.Body).Decode(&conta); err != nil {
+func CreateContasReceber(w http.ResponseWriter, r *http.Request) {
+	var contareceber models.ContaReceber
+	if err := json.NewDecoder(r.Body).Decode(&contareceber); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -82,7 +80,7 @@ func CreateConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO conta_pagar (idpagar, data, valor, vencimento, pagamento, valorpago, idfornecedor) VALUES (?, ?, ?, ?, ?, ?, ?)", conta.ID_Pagar, conta.Data, conta.Valor, conta.Vencimento, conta.Pagamento, conta.Valorpago, conta.Idfornecedor)
+	result, err := db.Exec("INSERT INTO conta_receber (data, valor, vencimento, pagamento, valorpago, idcliente) VALUES (?, ?, ?, ?, ?, ?)", contareceber.Data, contareceber.Valor, contareceber.Vencimento, contareceber.Pagamento, contareceber.Valorpago, contareceber.Idcliente)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -93,13 +91,13 @@ func CreateConta(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	conta.ID_Pagar = int(id)
+	contareceber.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func UpdateConta(w http.ResponseWriter, r *http.Request) {
+func UpdateContasReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -107,8 +105,8 @@ func UpdateConta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var conta models.Conta
-	if err := json.NewDecoder(r.Body).Decode(&conta); err != nil {
+	var contareceber models.ContaReceber
+	if err := json.NewDecoder(r.Body).Decode(&contareceber); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,18 +118,19 @@ func UpdateConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE conta_pagar SET data = ?, valor = ?, vencimento = ?, pagamento = ?, valorpago = ?, idfornecedor = ? WHERE idpagar = ?", conta.Data, conta.Valor, conta.Vencimento, conta.Pagamento, conta.Valorpago, conta.Idfornecedor, id)
+	_, err = db.Exec("UPDATE conta_receber SET data = ?, valor = ?, vencimento = ?, pagamento = ?, valorpago = ?, idcliente = ? WHERE idreceber = ?",
+		&contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	conta.ID_Pagar = id
+	contareceber.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func DeleteConta(w http.ResponseWriter, r *http.Request) {
+func DeleteContasReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -146,7 +145,7 @@ func DeleteConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM conta_pagar WHERE idpagar = ?", id)
+	_, err = db.Exec("DELETE FROM conta_receber WHERE idreceber = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

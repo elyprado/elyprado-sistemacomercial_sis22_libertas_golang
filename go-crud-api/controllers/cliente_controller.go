@@ -11,35 +11,37 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetContas(w http.ResponseWriter, r *http.Request) {
+func GetClientes(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	//
+	pesquisa := r.URL.Query().Get("pesquisa")
+	if pesquisa != "" {
+		pesquisa = " WHERE nome like '%" + pesquisa + "%' "
+	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idpagar, data, valor,vencimento,pagamento,valorpago,idfornecedor FROM conta_pagar")
+	rows, err := db.Query("SELECT idcliente, nome, cpf, logradouro,numero, bairro, cep, telefone, IFNULL(idcidade, 0) AS idcidade FROM cliente" + pesquisa + " ORDER BY idcliente")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var contas []models.Conta
+	var users []models.Cliente
 	for rows.Next() {
-		// A variável conta_pagar armazena os dados da tabela do arquivo contasapagar, do pacote models
-		var conta_pagar models.Conta
-		if err := rows.Scan(&conta_pagar.ID_Pagar, &conta_pagar.Data, &conta_pagar.Valor, &conta_pagar.Vencimento, &conta_pagar.Pagamento, &conta_pagar.Valorpago, &conta_pagar.Idfornecedor); err != nil {
+		var user models.Cliente
+		if err := rows.Scan(&user.ID, &user.Nome, &user.Cpf, &user.Logradouro, &user.Numero, &user.Bairro, &user.Cep, &user.Telefone, &user.Idcidade); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		contas = append(contas, conta_pagar)
+		users = append(users, user)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(contas)
+	json.NewEncoder(w).Encode(users)
 }
 
-func GetConta(w http.ResponseWriter, r *http.Request) {
+func GetCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -54,8 +56,8 @@ func GetConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var conta models.Conta
-	err = db.QueryRow("SELECT * FROM conta_pagar WHERE idpagar = ?", id).Scan(&conta.ID_Pagar, &conta.Data, &conta.Valor, &conta.Vencimento, &conta.Pagamento, &conta.Valorpago, &conta.Idfornecedor)
+	var user models.Cliente
+	err = db.QueryRow("SELECT idcliente, nome, cpf, logradouro, numero, bairro, cep, telefone, IFNULL(idcidade, 0) AS idcidade FROM cliente WHERE idcliente = ?", id).Scan(&user.ID, &user.Nome, &user.Cpf, &user.Logradouro, &user.Numero, &user.Bairro, &user.Cep, &user.Telefone, &user.Idcidade)
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -65,12 +67,12 @@ func GetConta(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(user)
 }
 
-func CreateConta(w http.ResponseWriter, r *http.Request) {
-	var conta models.Conta
-	if err := json.NewDecoder(r.Body).Decode(&conta); err != nil {
+func CreateCliente(w http.ResponseWriter, r *http.Request) {
+	var user models.Cliente
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -82,7 +84,7 @@ func CreateConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO conta_pagar (idpagar, data, valor, vencimento, pagamento, valorpago, idfornecedor) VALUES (?, ?, ?, ?, ?, ?, ?)", conta.ID_Pagar, conta.Data, conta.Valor, conta.Vencimento, conta.Pagamento, conta.Valorpago, conta.Idfornecedor)
+	result, err := db.Exec("INSERT INTO cliente (nome, cpf, logradouro, numero,bairro, cep, telefone, idcidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", user.Nome, user.Cpf, user.Logradouro, user.Numero, user.Bairro, user.Cep, user.Telefone, user.Idcidade)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -93,13 +95,13 @@ func CreateConta(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	conta.ID_Pagar = int(id)
+	user.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(user)
 }
 
-func UpdateConta(w http.ResponseWriter, r *http.Request) {
+func UpdateCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -107,8 +109,8 @@ func UpdateConta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var conta models.Conta
-	if err := json.NewDecoder(r.Body).Decode(&conta); err != nil {
+	var user models.Cliente
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,18 +122,18 @@ func UpdateConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE conta_pagar SET data = ?, valor = ?, vencimento = ?, pagamento = ?, valorpago = ?, idfornecedor = ? WHERE idpagar = ?", conta.Data, conta.Valor, conta.Vencimento, conta.Pagamento, conta.Valorpago, conta.Idfornecedor, id)
+	_, err = db.Exec("UPDATE cliente SET nome = ?, cpf = ?, logradouro = ?, numero = ?, bairro = ?, cep = ?, telefone = ?, idcidade = ? WHERE idcliente = ?", user.Nome, user.Cpf, user.Logradouro, user.Numero, user.Bairro, user.Cep, user.Telefone, user.Idcidade, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	conta.ID_Pagar = id
+	user.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conta)
+	json.NewEncoder(w).Encode(user)
 }
 
-func DeleteConta(w http.ResponseWriter, r *http.Request) {
+func DeleteCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -146,7 +148,7 @@ func DeleteConta(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM conta_pagar WHERE idpagar = ?", id)
+	_, err = db.Exec("DELETE FROM cliente WHERE idcliente = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
