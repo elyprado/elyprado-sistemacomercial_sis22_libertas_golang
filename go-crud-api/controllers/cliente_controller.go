@@ -11,23 +11,27 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func GetClientes(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	pesquisa := r.URL.Query().Get("pesquisa")
+	if pesquisa != "" {
+		pesquisa = " WHERE nome like '%" + pesquisa + "%' "
+	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+	rows, err := db.Query("SELECT idcliente, nome, cpf, logradouro,numero, bairro, cep, telefone, IFNULL(idcidade, 0) AS idcidade FROM cliente" + pesquisa + " ORDER BY idcliente")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+	var users []models.Cliente
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var user models.Cliente
+		if err := rows.Scan(&user.ID, &user.Nome, &user.Cpf, &user.Logradouro, &user.Numero, &user.Bairro, &user.Cep, &user.Telefone, &user.Idcidade); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -37,7 +41,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -52,8 +56,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var user models.User
-	err = db.QueryRow("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id).Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone)
+	var user models.Cliente
+	err = db.QueryRow("SELECT idcliente, nome, cpf, logradouro, numero, bairro, cep, telefone, IFNULL(idcidade, 0) AS idcidade FROM cliente WHERE idcliente = ?", id).Scan(&user.ID, &user.Nome, &user.Cpf, &user.Logradouro, &user.Numero, &user.Bairro, &user.Cep, &user.Telefone, &user.Idcidade)
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -66,8 +70,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
+func CreateCliente(w http.ResponseWriter, r *http.Request) {
+	var user models.Cliente
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -80,7 +84,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO usuario (nome, email, senha, telefone) VALUES (?, ?, ?, ?)", user.Nome, user.Email, user.Senha, user.Telefone)
+	result, err := db.Exec("INSERT INTO cliente (nome, cpf, logradouro, numero,bairro, cep, telefone, idcidade) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", user.Nome, user.Cpf, user.Logradouro, user.Numero, user.Bairro, user.Cep, user.Telefone, user.Idcidade)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -97,7 +101,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -105,7 +109,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
+	var user models.Cliente
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -118,7 +122,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE usuario SET nome = ?, email = ?, senha = ?, telefone = ? WHERE idusuario = ?", user.Nome, user.Email, user.Senha, user.Telefone, id)
+	_, err = db.Exec("UPDATE cliente SET nome = ?, cpf = ?, logradouro = ?, numero = ?, bairro = ?, cep = ?, telefone = ?, idcidade = ? WHERE idcliente = ?", user.Nome, user.Cpf, user.Logradouro, user.Numero, user.Bairro, user.Cep, user.Telefone, user.Idcidade, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -129,7 +133,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func DeleteCliente(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -144,7 +148,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM usuario WHERE idusuario = ?", id)
+	_, err = db.Exec("DELETE FROM cliente WHERE idcliente = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -30,7 +30,7 @@ function novo() {
 function alterar(id) {
     idatual = id;
 
-    fetch("http://127.0.0.1:3333/contasreceber/" + id)
+    fetch("http://127.0.0.1:8080/contasareceber/" + id)
     .then(resp => resp.json())
     .then(dados => {
         console.log("Dados brutos recebidos para alteração:", dados);
@@ -59,7 +59,7 @@ function listar() {
     const txtpesquisa = document.getElementById("txtpesquisa");
 
 
-    fetch("http://127.0.0.1:3333/contasreceber?pesquisa=" + txtpesquisa.value)
+    fetch("http://127.0.0.1:8080/contasareceber?pesquisa=" + txtpesquisa.value)
     .then(resp => resp.json())
     .then(dados => {
         console.log("Dados brutos recebidos do servidor:", dados);
@@ -108,7 +108,7 @@ function excluir(id) {
     modalExcluir.show();
 }
 function excluirSim() {
-    fetch("http://127.0.0.1:3333/contasreceber/" + idatual,
+    fetch("http://127.0.0.1:8080/contasareceber/" + idatual,
         {
             headers: {
                 'Accept': 'application/json',
@@ -123,47 +123,49 @@ function excluirSim() {
         listar();
     })
 }
+
 function salvar() {
-        const txtdata = document.getElementById("txtdata");
-        const txtvalor = document.getElementById("txtvalor");
-        const txtvencimento = document.getElementById("txtvencimento");
-        const txtpagamento = document.getElementById("txtpagamento");
-        const txtvalorpago = document.getElementById("txtvalorpago");
+    const txtdata = document.getElementById("txtdata").value;
+    const txtvalor = document.getElementById("txtvalor").value;
+    const txtvencimento = document.getElementById("txtvencimento").value;
+    const txtpagamento = document.getElementById("txtpagamento").value;
+    const txtvalorpago = document.getElementById("txtvalorpago").value;
 
-
+    const idcliente = document.getElementById("idcliente").value;
 
     const dados = {
-        data: txtdata.value,
-        valor: txtvalor.value,
-        vencimento: txtvencimento.value, 
-        pagamento: txtpagamento.value,
-        valorpago: txtvalorpago.value, 
-
-    }
+        data: txtdata,
+        valor: txtvalor,
+        vencimento: txtvencimento,
+        pagamento: txtpagamento,
+        valorpago: txtvalorpago,
+        idcliente: parseInt(idcliente) 
+    };
 
     var url;
     var metodo;
-    if (idatual<=0) {
-        url = "http://127.0.0.1:3333/contasreceber";
+    if (idatual <= 0) {
+        url = "http://127.0.0.1:8080/contasareceber";
         metodo = "POST";
     } else {
-        url = "http://127.0.0.1:3333/contasreceber/" + idatual;
+        url = "http://127.0.0.1:8080/contasareceber/" + idatual;
         metodo = "PUT";
     }
-    fetch(url,
-        {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-                },
-            method: metodo, 
-            body: JSON.stringify(dados)
-        }
-    ).then(() => {
+    fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        method: metodo,
+        body: JSON.stringify(dados)
+    })
+    .then(() => {
         modal.hide();
         listar();
     })
-
+    .catch(error => console.error('Erro ao salvar:', error));
 }
+
+
 
 listar();

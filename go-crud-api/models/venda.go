@@ -5,7 +5,7 @@ type Venda struct {
 	NumeroNF     string `json:"numeronf"`
 	Data    string `json:"data"`
 	Quantidade    string `json:"quantidade"`
-	Valor float64 `json:"Valor"`
+	Valor float64 `json:"valor"`
 	Comissao float64 `json:"comissao"`
 	IdCliente int `json:"idcliente"`
 	IdProduto int `json:"idproduto"`

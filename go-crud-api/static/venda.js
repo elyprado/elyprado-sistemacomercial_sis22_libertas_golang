@@ -60,7 +60,7 @@ function novo() {
     const txtIdcliente = document.getElementById("txtIdcliente");
     const txtIdproduto = document.getElementById("txtIdproduto");
     const txtIdvendedor = document.getElementById("txtIdvendedor");
-    console.log(txtData.value)
+    
     modalTitle.innerHTML = '<i class="bi bi-receipt"></i>&nbsp;&nbsp;Cadastrar nova venda'
 
     
@@ -128,7 +128,7 @@ function listar() {
 function mostrar(dados) {
     const lista = document.getElementById("lista");
 
-    
+    console.log(dados)
     const produtos = ["Coca-Cola", "Pepsi", "Doritos", "Fandangos"]
     
     const clientes = [
@@ -210,14 +210,14 @@ function salvar() {
     const dados = {
         numeronf: txtNumeronf.value,
         data: (txtData.value),
-        quantidade: parseInt(txtQuantidade.value),
+        quantidade: (txtQuantidade.value),
         valor: parseFloat(txtValor.value),
         comissao: parseFloat(txtComissao.value),
         idcliente: parseInt(txtIdcliente.value),
         idproduto: parseInt(txtIdproduto.value),
         idvendedor: parseInt(txtIdvendedor.value),
     }
-
+    console.log(dados)
     var url;
     var metodo;
     if (idatual < 0) {
@@ -230,7 +230,7 @@ function salvar() {
         metodo = "PUT"
     }
 
-    console.log(dados)
+    
         fetch(url,
             {
                 headers: {

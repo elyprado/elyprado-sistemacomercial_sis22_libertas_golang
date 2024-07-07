@@ -11,33 +11,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func GetContasReceber(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+	rows, err := db.Query("SELECT idreceber, data, valor, vencimento, pagamento, valorpago, idcliente FROM conta_receber ORDER BY data")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+	var contasareceber []models.ContaReceber
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var contareceber models.ContaReceber
+		if err := rows.Scan(&contareceber.ID, &contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, user)
+		contasareceber = append(contasareceber, contareceber)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(contasareceber)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetContaReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -52,8 +52,8 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var user models.User
-	err = db.QueryRow("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id).Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone)
+	var contareceber models.ContaReceber
+	err = db.QueryRow("SELECT idreceber, data, valor, vencimento, pagamento, valorpago, idcliente FROM conta_receber WHERE idreceber = ?", id).Scan(&contareceber.ID, &contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente)
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -63,12 +63,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+func CreateContasReceber(w http.ResponseWriter, r *http.Request) {
+	var contareceber models.ContaReceber
+	if err := json.NewDecoder(r.Body).Decode(&contareceber); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -80,7 +80,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO usuario (nome, email, senha, telefone) VALUES (?, ?, ?, ?)", user.Nome, user.Email, user.Senha, user.Telefone)
+	result, err := db.Exec("INSERT INTO conta_receber (data, valor, vencimento, pagamento, valorpago, idcliente) VALUES (?, ?, ?, ?, ?, ?)", contareceber.Data, contareceber.Valor, contareceber.Vencimento, contareceber.Pagamento, contareceber.Valorpago, contareceber.Idcliente)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,13 +91,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user.ID = int(id)
+	contareceber.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateContasReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -105,8 +105,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var contareceber models.ContaReceber
+	if err := json.NewDecoder(r.Body).Decode(&contareceber); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -118,18 +118,19 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE usuario SET nome = ?, email = ?, senha = ?, telefone = ? WHERE idusuario = ?", user.Nome, user.Email, user.Senha, user.Telefone, id)
+	_, err = db.Exec("UPDATE conta_receber SET data = ?, valor = ?, vencimento = ?, pagamento = ?, valorpago = ?, idcliente = ? WHERE idreceber = ?",
+		&contareceber.Data, &contareceber.Valor, &contareceber.Vencimento, &contareceber.Pagamento, &contareceber.Valorpago, &contareceber.Idcliente, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user.ID = id
+	contareceber.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(contareceber)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func DeleteContasReceber(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -144,7 +145,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM usuario WHERE idusuario = ?", id)
+	_, err = db.Exec("DELETE FROM conta_receber WHERE idreceber = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

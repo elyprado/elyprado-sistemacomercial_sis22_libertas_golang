@@ -11,37 +11,39 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func GetCidades(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+
+	rows, err := db.Query("SELECT * FROM cidade")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+
+	var cidades []models.Cidade
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var cidade models.Cidade
+		if err := rows.Scan(&cidade.ID, &cidade.NomeCidade, &cidade.Uf, &cidade.CodigoIbge, &cidade.População, &cidade.Latitude, &cidade.Longitude); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, user)
+		cidades = append(cidades, cidade)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(cidades)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
@@ -52,10 +54,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var user models.User
-	err = db.QueryRow("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id).Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone)
+	var cidade models.Cidade
+	err = db.QueryRow("SELECT * FROM cidade WHERE idcidade = ?", id).Scan(&cidade.ID, &cidade.NomeCidade, &cidade.Uf, &cidade.CodigoIbge, &cidade.População, &cidade.Latitude, &cidade.Longitude)
 	if err == sql.ErrNoRows {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "Cidade not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,12 +65,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+func CreateCidade(w http.ResponseWriter, r *http.Request) {
+	var cidade models.Cidade
+	if err := json.NewDecoder(r.Body).Decode(&cidade); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -80,7 +82,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO usuario (nome, email, senha, telefone) VALUES (?, ?, ?, ?)", user.Nome, user.Email, user.Senha, user.Telefone)
+	result, err := db.Exec("INSERT INTO cidade (nomecidade, uf, codigo_ibge, população, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
+		cidade.NomeCidade, cidade.Uf, cidade.CodigoIbge, cidade.População, cidade.Latitude, cidade.Longitude)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,22 +94,22 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user.ID = int(id)
+	cidade.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var cidade models.Cidade
+	if err := json.NewDecoder(r.Body).Decode(&cidade); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -118,22 +121,23 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE usuario SET nome = ?, email = ?, senha = ?, telefone = ? WHERE idusuario = ?", user.Nome, user.Email, user.Senha, user.Telefone, id)
+	_, err = db.Exec("UPDATE cidade SET nomecidade = ?, uf = ?, codigo_ibge = ?, população = ?, latitude = ?, longitude = ? WHERE idcidade = ?",
+		cidade.NomeCidade, cidade.Uf, cidade.CodigoIbge, cidade.População, cidade.Latitude, cidade.Longitude, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user.ID = id
+	cidade.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(cidade)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func DeleteCidade(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid cidade ID", http.StatusBadRequest)
 		return
 	}
 
@@ -144,7 +148,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM usuario WHERE idusuario = ?", id)
+	_, err = db.Exec("DELETE FROM cidade WHERE idcidade = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

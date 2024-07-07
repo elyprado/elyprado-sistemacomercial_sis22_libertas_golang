@@ -1,3 +1,4 @@
+
 package controllers
 
 import (
@@ -11,37 +12,37 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+func GetProdutos(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+	rows, err := db.Query("SELECT idproduto, descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca FROM produto")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+	var produtos []models.Produto
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var produto models.Produto
+		if err := rows.Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, user)
+		produtos = append(produtos, produto)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(produtos)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetProduto(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
 		return
 	}
 
@@ -52,10 +53,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var user models.User
-	err = db.QueryRow("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id).Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone)
+	var produto models.Produto
+	err = db.QueryRow("SELECT idproduto, descricao, precocusto,precovenda,saldoestoque,codbarras,idmarca FROM produto WHERE idproduto = ?", id).Scan(&produto.ID, &produto.Descricao, &produto.PrecoCusto, &produto.PrecoVenda, &produto.SaldoEstoque, &produto.CodBarras, &produto.IdMarca)
 	if err == sql.ErrNoRows {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "produto not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,12 +64,12 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(produto)
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+func CreateProduto(w http.ResponseWriter, r *http.Request) {
+	var produto models.Produto
+	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -80,7 +81,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO usuario (nome, email, senha, telefone) VALUES (?, ?, ?, ?)", user.Nome, user.Email, user.Senha, user.Telefone)
+	result, err := db.Exec("INSERT INTO produto (descricao, precocusto, precovenda, saldoestoque, codbarras, idmarca) VALUES (?, ?, ?, ?, ?, ?)", produto.ID, produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,22 +92,22 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user.ID = int(id)
+	produto.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(produto)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+func UpdateProduto(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
 		return
 	}
 
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var produto models.Produto  
+	if err := json.NewDecoder(r.Body).Decode(&produto); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -118,22 +119,22 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE usuario SET nome = ?, email = ?, senha = ?, telefone = ? WHERE idusuario = ?", user.Nome, user.Email, user.Senha, user.Telefone, id)
+	_, err = db.Exec("UPDATE produto SET descricao = ?, precocusto = ?, precovenda = ?, saldoestoque =?, codbarras = ?, idmarca = ?  WHERE idproduto = ?", produto.Descricao, produto.PrecoCusto, produto.PrecoVenda, produto.SaldoEstoque, produto.CodBarras, produto.IdMarca, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user.ID = id
+	produto.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(produto)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func DeleteProduto(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid produto ID", http.StatusBadRequest)
 		return
 	}
 
@@ -144,7 +145,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM usuario WHERE idusuario = ?", id)
+	_, err = db.Exec("DELETE FROM produto WHERE idproduto = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

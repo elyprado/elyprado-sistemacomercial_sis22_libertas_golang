@@ -11,37 +11,42 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsers(w http.ResponseWriter, r *http.Request) {
+// GET
+func GetCompra(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+
+	rows, err := db.Query("SELECT idcompra, numeronf, data, quantidade, valor, idproduto, idfornecedor FROM compra")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+
+	var compras []models.Compra
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var compra models.Compra
+		if err := rows.Scan(&compra.ID, &compra.NumeroNF, &compra.Data, &compra.Quantidade, &compra.Valor, &compra.IdProduto, &compra.IdFornecedor); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, user)
+		compras = append(compras, compra)
 	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(compras)
 }
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+// GET ID
+func GetCompraByID(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid compra ID", http.StatusBadRequest)
 		return
 	}
 
@@ -52,10 +57,10 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var user models.User
-	err = db.QueryRow("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id).Scan(&user.ID, &user.Nome, &user.Email, &user.Senha, &user.Telefone)
+	var compra models.Compra
+	err = db.QueryRow("SELECT idcompra, numeronf, data, quantidade, valor, idproduto, idfornecedor FROM compra WHERE idcompra = ?", id).Scan(&compra.ID, &compra.NumeroNF, &compra.Data, &compra.Quantidade, &compra.Valor, &compra.IdProduto, &compra.IdFornecedor)
 	if err == sql.ErrNoRows {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "compra not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,12 +68,13 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+// POST
+func CreateCompra(w http.ResponseWriter, r *http.Request) {
+	var compra models.Compra
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -80,7 +86,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO usuario (nome, email, senha, telefone) VALUES (?, ?, ?, ?)", user.Nome, user.Email, user.Senha, user.Telefone)
+	result, err := db.Exec("INSERT INTO compra (numeronf, data, quantidade, valor, idproduto, idfornecedor) VALUES (?, ?, ?, ?, ?, ?)", compra.NumeroNF, compra.Data, compra.Quantidade, compra.Valor, compra.IdProduto, compra.IdFornecedor)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -91,22 +97,23 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	user.ID = int(id)
+	compra.ID = int(id)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
+// PUT
+func UpdateCompra(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid compra ID", http.StatusBadRequest)
 		return
 	}
 
-	var user models.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var compra models.Compra
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -118,22 +125,23 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("UPDATE usuario SET nome = ?, email = ?, senha = ?, telefone = ? WHERE idusuario = ?", user.Nome, user.Email, user.Senha, user.Telefone, id)
+	_, err = db.Exec("UPDATE compra SET numeronf = ?, data = ?, quantidade = ?, valor = ?, idproduto = ?, idfornecedor = ? WHERE idcompra = ?", compra.NumeroNF, compra.Data, compra.Quantidade, compra.Valor, compra.IdProduto, compra.IdFornecedor, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user.ID = id
+	compra.ID = id
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(compra)
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+// DELETE
+func DeleteCompra(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		http.Error(w, "Invalid Compra ID", http.StatusBadRequest)
 		return
 	}
 
@@ -144,7 +152,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("DELETE FROM usuario WHERE idusuario = ?", id)
+	_, err = db.Exec("DELETE FROM compra WHERE idcompra = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
